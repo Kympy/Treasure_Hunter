@@ -11,12 +11,13 @@ public class Player : MonoBehaviour
     private float MaxHP = 100f;
     [SerializeField]
     private float speed = 2f;
-    private float jumpPower = 2000f;
+    private float jumpPower = 3500f;
 
     private float recoverTimer = 0f;
 
     private bool isGround = true;
     private bool isJumping = false;
+    private bool isDigging = false;
 
     private RaycastHit hit;
     private RaycastHit groundHit;
@@ -61,29 +62,41 @@ public class Player : MonoBehaviour
     }
     private void OnMouse()
     {
-        if(Input.GetMouseButton(1))
+        if((Input.GetMouseButton(1) || Input.GetMouseButtonDown(0)) && isDigging == false)
         {
             mouseRay = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(mouseRay, out hit))
             {
-                desiredPos = hit.point;
-                desiredPos.y = transform.position.y;
-                desiredDir = desiredPos - transform.position;
+                if(Input.GetMouseButton(1))
+                {
+                    desiredPos = hit.point;
+                    desiredPos.y = transform.position.y;
+                    desiredDir = desiredPos - transform.position;
+                }
+                else if(Input.GetMouseButtonDown(0))
+                {
+                    if(hit.transform.tag == "Ground")
+                    {
+                        desiredPos = hit.point;
+                        desiredPos.y = transform.position.y;
+                        desiredDir = desiredPos - transform.position;
+                        StartCoroutine(Dig(hit.transform.gameObject));
+                    }
+                }
             }
         }
         Movement();
     }
     private void OnKeyBoard()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && isJumping == false && isGround)
+        if (isDigging == false && Input.GetKeyDown(KeyCode.Space) && isJumping == false && isGround)
         {
-            Debug.Log("Jump");
             rigid.AddForce(jumpPower * Vector3.up, ForceMode.Force);
+            isJumping = true;
 
         }
         if (Input.GetKeyDown(KeyCode.F))
         {
-            Debug.Log("Cheat HP");
             SetHP(-10);
         }
     }
@@ -95,22 +108,42 @@ public class Player : MonoBehaviour
             if (groundHit.transform.tag == "Ground")
             {
                 animator.SetBool("IsJump", false);
+                isJumping = false;
                 isGround = true;
             }
         }
         else
         {
-            isGround = false;
             animator.SetBool("IsJump", true);
+            isGround = false;
         }
     }
-    private void AnimationPlay()
+    private IEnumerator Dig(GameObject block)
     {
-        if(isJumping)
+        while (true)
         {
-            animator.SetBool("IsJump", false);
+            if(Input.GetMouseButtonDown(1))
+            {
+                StopCoroutine(Dig(block));
+                break;
+            }
+            if(transform.position.x == desiredPos.x && transform.position.z == desiredPos.z)
+            {
+                if(isDigging == false)
+                {
+                    animator.SetTrigger("IsDigging");
+                    isDigging = true;
+                }
+                if (animator.GetCurrentAnimatorStateInfo(0).IsName("Dig") && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.7f)
+                {
+                    Destroy(block);
+                    isDigging = false;
+                    StopCoroutine(Dig(block));
+                    break;
+                }
+            }
+            yield return null;
         }
-        else animator.SetBool("IsJump", true);
     }
     private void InitStat()
     {

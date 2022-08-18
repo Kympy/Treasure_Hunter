@@ -13,6 +13,9 @@ public class GameManager : SingleTon<GameManager>
 
     private CameraControl cam = null;
 
+    private GameObject SmokeEffect = null;
+    public GameObject smokeEffect { get { return SmokeEffect; } }
+
     public override void Awake()
     {
         base.Awake();
@@ -20,6 +23,7 @@ public class GameManager : SingleTon<GameManager>
         PlayerCharacter = Resources.Load<GameObject>("Player");
 
         cam = GameObject.FindObjectOfType<CameraControl>().GetComponent<CameraControl>();
+        SmokeEffect = Resources.Load<GameObject>("Smoke");
     }
     private void Start()
     {
