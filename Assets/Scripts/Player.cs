@@ -73,7 +73,7 @@ public class Player : MonoBehaviour
                     desiredPos.y = transform.position.y;
                     desiredDir = desiredPos - transform.position;
                 }
-                else if(Input.GetMouseButtonDown(0))
+                else if(Input.GetMouseButtonDown(0) && isGround)
                 {
                     if(hit.transform.tag == "Ground")
                     {
@@ -124,6 +124,11 @@ public class Player : MonoBehaviour
         {
             if(Input.GetMouseButtonDown(1))
             {
+                isDigging = false;
+                if(animator.GetCurrentAnimatorStateInfo(0).IsName("Dig"))
+                {
+                    animator.Play("Idle", 0);
+                }
                 StopCoroutine(Dig(block));
                 break;
             }
@@ -136,6 +141,7 @@ public class Player : MonoBehaviour
                 }
                 if (animator.GetCurrentAnimatorStateInfo(0).IsName("Dig") && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.7f)
                 {
+                    Instantiate(GameManager.Instance.smokeEffect, transform.position, transform.rotation);
                     Destroy(block);
                     isDigging = false;
                     StopCoroutine(Dig(block));

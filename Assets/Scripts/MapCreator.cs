@@ -21,6 +21,8 @@ public class MapCreator : MonoBehaviour
     }
     public void Create()
     {
+        GameObject Map = new GameObject("Map");
+
         int currentFloor = 0;
         while(currentFloor > maxFloor)
         {
@@ -31,7 +33,7 @@ public class MapCreator : MonoBehaviour
                     startPos.x = i;
                     startPos.y = currentFloor;
                     startPos.z = j;
-                    Instantiate(SandBlock, startPos, Quaternion.identity);
+                    Instantiate(SandBlock, startPos, Quaternion.identity).transform.parent = Map.transform;
                 }
             }
             currentFloor--;
