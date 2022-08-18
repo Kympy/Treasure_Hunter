@@ -14,6 +14,8 @@ public class Player : MonoBehaviour
     private float jumpPower = 3500f;
 
     private float recoverTimer = 0f;
+    private float focusTimer = 0f;
+    private int arrowCount = 0;
 
     private bool isGround = true;
     private bool isJumping = false;
@@ -26,6 +28,12 @@ public class Player : MonoBehaviour
     private Vector3 desiredDir;
     private Rigidbody rigid;
     private Animator animator;
+    private GameObject FocusAnimation;
+    private GameObject Arrow;
+    private GameObject temp;
+    private Vector3 coinPos;
+
+    private Coroutine DigCoroutine;
     public float GetHP { get { return HP; } }
     public float GetMaxHP { get { return MaxHP; } }
 
@@ -42,27 +50,29 @@ public class Player : MonoBehaviour
         rigid = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
         desiredPos = GameManager.Instance.GetStartPos;
+        FocusAnimation = GameObject.Find("Focus");
+        FocusAnimation.SetActive(false);
+        Arrow = Resources.Load<GameObject>("Arrow");
     }
-    private void Update()
+    private void FixedUpdate()
     {
         CheckGround();
-        //AnimationPlay();
+        Movement();
         RecoverHP();
-        
     }
     private void Movement()
     {
-        if (desiredPos.x != transform.position.x && desiredPos.z != transform.position.z)
+        if (desiredPos.x != transform.position.x && desiredPos.z != transform.position.z && isDigging == false)
         {
             transform.position = Vector3.MoveTowards(transform.position, desiredPos, Time.deltaTime * speed);
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(desiredDir), Time.deltaTime * 3f);
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(desiredDir), Time.deltaTime * 8f);
             animator.SetBool("IsWalk", true);
         }
         else animator.SetBool("IsWalk", false);
     }
     private void OnMouse()
     {
-        if((Input.GetMouseButton(1) || Input.GetMouseButtonDown(0)) && isDigging == false)
+        if(Input.GetMouseButton(1) || Input.GetMouseButtonDown(0))
         {
             mouseRay = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(mouseRay, out hit))
@@ -73,39 +83,87 @@ public class Player : MonoBehaviour
                     desiredPos.y = transform.position.y;
                     desiredDir = desiredPos - transform.position;
                 }
-                else if(Input.GetMouseButtonDown(0) && isGround)
+                else if(isDigging == false && Input.GetMouseButtonDown(0) && isGround)
                 {
                     if(hit.transform.tag == "Ground")
                     {
                         desiredPos = hit.point;
                         desiredPos.y = transform.position.y;
                         desiredDir = desiredPos - transform.position;
-                        StartCoroutine(Dig(hit.transform.gameObject));
+                        DigCoroutine = StartCoroutine(Dig(hit.transform.gameObject));
                     }
                 }
             }
         }
-        Movement();
     }
     private void OnKeyBoard()
     {
-        if (isDigging == false && Input.GetKeyDown(KeyCode.Space) && isJumping == false && isGround)
+        if (Input.GetKeyDown(KeyCode.Space) && isJumping == false && isGround)
         {
             rigid.AddForce(jumpPower * Vector3.up, ForceMode.Force);
+            animator.SetBool("IsJump", true);
             isJumping = true;
-
+        }
+        if(Input.GetKey(KeyCode.Q))
+        {
+            Debug.Log("Focusing!!");
+            animator.SetBool("IsFocus", true);
+            FindCoinFocus();
+            FocusAnimation.SetActive(true);
+        }
+        if(Input.GetKeyUp(KeyCode.Q))
+        {
+            animator.SetBool("IsFocus", false);
+            FocusAnimation.SetActive(false);
+            ReleaseFocus();
         }
         if (Input.GetKeyDown(KeyCode.F))
         {
             SetHP(-10);
         }
+        if(Input.GetKeyDown(KeyCode.P))
+        {
+            GameManager.Instance.LoadMainScene();
+        }
+    }
+    private void FindCoinFocus()
+    {
+        focusTimer += Time.deltaTime;
+        if(focusTimer > 1f)
+        {
+            SetHP(-20);
+            arrowCount++;
+            if(arrowCount > GameManager.Instance.TotalCoinCount)
+            {
+                arrowCount = GameManager.Instance.TotalCoinCount;
+            }
+            if (GameManager.Instance.TotalCoinCount > 0)
+            {
+                temp = Instantiate(Arrow, transform);
+                coinPos = GameManager.Instance.GetCoinList[arrowCount - 1].transform.position;
+                coinPos.y = transform.position.y;
+                temp.transform.LookAt(coinPos);
+                temp.SetActive(true);
+            }
+            focusTimer = 0f;
+        }
+
+    }
+    private void ReleaseFocus()
+    {
+        for(int i = 4; i < arrowCount + 4; i++)
+        {
+            Destroy(transform.GetChild(i).gameObject);
+        }
+        focusTimer = 0f;
+        arrowCount = 0;
     }
     private void CheckGround()
     {
-        Debug.DrawRay(transform.position, Vector3.down * 0.15f, Color.red);
-        if(Physics.Raycast(transform.position, Vector3.down, out groundHit, 0.15f))
+        Debug.DrawRay(transform.position, Vector3.down * 0.3f, Color.red);
+        if(Physics.Raycast(transform.position, Vector3.down, out groundHit, 0.3f))
         {
-            if (groundHit.transform.tag == "Ground")
+            if (groundHit.transform.tag == "Ground" || groundHit.transform.tag == "Rock")
             {
                 animator.SetBool("IsJump", false);
                 isJumping = false;
@@ -114,37 +172,43 @@ public class Player : MonoBehaviour
         }
         else
         {
-            animator.SetBool("IsJump", true);
             isGround = false;
         }
     }
     private IEnumerator Dig(GameObject block)
     {
+        if(isDigging)
+        {
+            StopCoroutine(DigCoroutine);
+        }
+        transform.rotation = Quaternion.LookRotation(desiredDir);
         while (true)
         {
-            if(Input.GetMouseButtonDown(1))
+            if(Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Space))
             {
                 isDigging = false;
+
                 if(animator.GetCurrentAnimatorStateInfo(0).IsName("Dig"))
                 {
                     animator.Play("Idle", 0);
                 }
-                StopCoroutine(Dig(block));
+                StopCoroutine(DigCoroutine);
                 break;
             }
-            if(transform.position.x == desiredPos.x && transform.position.z == desiredPos.z)
+            if(Mathf.Abs(transform.position.x - desiredPos.x) <= 1  && Mathf.Abs(transform.position.z - desiredPos.z) <= 1)
             {
+                desiredPos = transform.position;
                 if(isDigging == false)
                 {
                     animator.SetTrigger("IsDigging");
                     isDigging = true;
                 }
-                if (animator.GetCurrentAnimatorStateInfo(0).IsName("Dig") && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 0.7f)
+                if (animator.GetCurrentAnimatorStateInfo(0).IsName("Dig") && animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= 1.0f)
                 {
-                    Instantiate(GameManager.Instance.smokeEffect, transform.position, transform.rotation);
-                    Destroy(block);
+                    block.GetComponent<CubeDestroy>().OpenAndDestroy();
+                    SetHP(-5);
                     isDigging = false;
-                    StopCoroutine(Dig(block));
+                    StopCoroutine(DigCoroutine);
                     break;
                 }
             }
@@ -165,7 +229,7 @@ public class Player : MonoBehaviour
     }
     private void RecoverHP()
     {
-        if (rigid.velocity.magnitude == 0f && HP < 100)
+        if (rigid.velocity.magnitude == 0f && HP < 100 && isDigging == false)
         {
             recoverTimer += Time.deltaTime;
             if (recoverTimer > 1f)

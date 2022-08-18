@@ -5,10 +5,12 @@ using UnityEngine;
 public class MapCreator : MonoBehaviour
 {
     private GameObject SandBlock = null;
+    private GameObject temp = null;
     private Vector3 startPos = new Vector3(0f, 0f, 0f);
     private int maxRow;
     private int maxCol;
-    private int maxFloor = -5;
+    private int maxFloor = -6;
+    public int GetMaxFloor { get { return maxFloor; } }
 
     public int MaxRow { get { return maxRow; } }
     public int MaxCol { get { return maxCol; } }
@@ -24,7 +26,7 @@ public class MapCreator : MonoBehaviour
         GameObject Map = new GameObject("Map");
 
         int currentFloor = 0;
-        while(currentFloor > maxFloor)
+        while(currentFloor >= maxFloor)
         {
             for (int i = 0; i < maxRow; i++)
             {
@@ -33,7 +35,8 @@ public class MapCreator : MonoBehaviour
                     startPos.x = i;
                     startPos.y = currentFloor;
                     startPos.z = j;
-                    Instantiate(SandBlock, startPos, Quaternion.identity).transform.parent = Map.transform;
+                    temp = Instantiate(SandBlock, startPos, Quaternion.identity);
+                    temp.transform.parent = Map.transform;
                 }
             }
             currentFloor--;

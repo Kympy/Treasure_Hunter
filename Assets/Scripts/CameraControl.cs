@@ -9,30 +9,57 @@ public class CameraControl : MonoBehaviour
 
     private float smoothSpeed = 10f;
     private Vector3 desiredPosition;
-    private Quaternion desiredRotation;
+
     private Vector3 posOffset = new Vector3(0f, 8f, -8f);
     private Vector3 rotOffset = new Vector3(45f, 0f, 0f);
 
-    private void Update()
+    private float mouseX;
+    private float mouseY;
+    private float zoom;
+
+    private void Awake()
+    {
+        InputManager.Instance.keyInput -= MouseRotation;
+        InputManager.Instance.keyInput += MouseRotation;
+        InputManager.Instance.keyInput -= MouseZoom;
+        InputManager.Instance.keyInput += MouseZoom;
+    }
+    private void FixedUpdate()
     {
         if (active)
         {
-            desiredPosition = target.transform.position + posOffset;
-            //desiredRotation = Quaternion.LookRotation(target.transform.position - transform.position);
-
-            transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
-            //transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, smoothSpeed * Time.deltaTime);
-            transform.rotation = Quaternion.Euler(rotOffset);
+            //transform.position = target.transform.position + posOffset;
+            transform.LookAt(target.transform);
         }
         else return;
+    }
+    private void MouseRotation()
+    {
+        if(Input.GetMouseButton(2) && active)
+        {
+            mouseX = Input.GetAxis("Mouse X") * 150f;
+            mouseY = Input.GetAxis("Mouse Y") * 150f;
+            transform.RotateAround(target.transform.position, Vector3.up, mouseX * Time.deltaTime);
+            transform.RotateAround(target.transform.position, transform.right, -mouseY * Time.deltaTime);
+        }
+    }
+    private void MouseZoom()
+    {
+        zoom = Input.GetAxis("Mouse ScrollWheel");
+        transform.position -= (transform.position - target.transform.position).normalized * zoom * 10f;
     }
     public void FindPlayer()
     {
         target = GameObject.FindGameObjectWithTag("Player").gameObject;
-        active = true;
-        if(target == null)
+        if (target == null)
         {
             Debug.LogError("Camera Can't Find Player!!");
+            return;
         }
+        active = true;
+        desiredPosition = target.transform.position + posOffset;
+
+        transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
+        transform.rotation = Quaternion.Euler(rotOffset);
     }
 }
