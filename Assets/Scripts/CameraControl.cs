@@ -17,18 +17,22 @@ public class CameraControl : MonoBehaviour
     private float mouseY;
     private float zoom;
 
-    private void Awake()
+    private void Start()
     {
-        InputManager.Instance.keyInput -= MouseRotation;
-        InputManager.Instance.keyInput += MouseRotation;
-        InputManager.Instance.keyInput -= MouseZoom;
-        InputManager.Instance.keyInput += MouseZoom;
+        /*
+        GameManager.Instance.GetInput.keyInput -= MouseRotation;
+        GameManager.Instance.GetInput.keyInput -= MouseZoom;
+
+        GameManager.Instance.GetInput.keyInput += MouseRotation;
+        GameManager.Instance.GetInput.keyInput += MouseZoom;
+        */
     }
     private void FixedUpdate()
     {
+        MouseRotation();
+        MouseZoom();
         if (active)
         {
-            //transform.position = target.transform.position + posOffset;
             transform.LookAt(target.transform);
         }
         else return;
@@ -45,8 +49,11 @@ public class CameraControl : MonoBehaviour
     }
     private void MouseZoom()
     {
-        zoom = Input.GetAxis("Mouse ScrollWheel");
-        transform.position -= (transform.position - target.transform.position).normalized * zoom * 10f;
+        if(active && Input.GetAxis("Mouse ScrollWheel") != 0)
+        {
+            zoom = Input.GetAxis("Mouse ScrollWheel");
+            transform.position -= (transform.position - target.transform.position).normalized * zoom * 10f;
+        }
     }
     public void FindPlayer()
     {

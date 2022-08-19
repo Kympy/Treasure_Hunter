@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-public class InputManager : SingleTon<InputManager>
+public class InputManager : MonoBehaviour
 {
     public Action keyInput = null;
 
@@ -18,4 +18,20 @@ public class InputManager : SingleTon<InputManager>
             keyInput.Invoke();
         }
     }
+    public void InitForce()
+    {
+        Debug.Log("Input Manager Init Force : " + GetInstanceID());
+    }
+
+    public void Awake()
+    {
+        Debug.Log("Input Manager Awake : " + GetInstanceID());
+    }
+
+    void OnDestroy()
+    {
+        //keyInput = null;
+        Debug.Log("Input Manager Destroyed : " + GetInstanceID());
+    }
+
 }

@@ -14,7 +14,14 @@ public class CoinRotate : MonoBehaviour
     {
         if(other.gameObject.tag == "Player")
         {
-            GameManager.Instance.FoundCoin(this.gameObject);
+            if(this.gameObject.tag == "Star")
+            {
+                GameManager.Instance.GetItem();
+            }
+            else
+            {
+                GameManager.Instance.FoundCoin(this.gameObject);
+            }
             Destroy(this.gameObject);
         }
     }

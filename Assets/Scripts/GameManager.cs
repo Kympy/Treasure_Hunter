@@ -5,27 +5,28 @@ using UnityEngine.SceneManagement;
 public class GameManager : SingleTon<GameManager>
 {
     public delegate void CoinChange();
-    public CoinChange coinChanged;
+    public CoinChange coinChanged = null;
     private MapCreator mapCreator = null;
-    public MapCreator GetCreator { get { return mapCreator; } }
-    private GameObject PlayerCharacter = null;
-    private Player player = null;
-    public Player MyPlayer { get { return player; } }
-    private Vector3 PlayerStartPos;
-    public Vector3 GetStartPos { get { return PlayerStartPos; } }
+    private UIManager ui = null;
+    //private InputManager input;
 
+    //public InputManager GetInput { get { return input; } }
+    private GameObject PlayerCharacter = null;
+    [SerializeField]
+    private Player player = null;
+
+    private Vector3 PlayerStartPos;
     private CameraControl cam = null;
 
-    private RaycastHit hit;
-    private Vector3 desiredPos;
-    private GameObject hitObj;
-    private Coroutine FallCoroutine;
-
     private int CoinCount = 0;
+    public bool isAdr = false;
     private List<GameObject> CoinPosition = new List<GameObject>();
-    public List<GameObject> GetCoinList { get { return CoinPosition; } }
+
+    public Player MyPlayer { get { return player; } set { player = value; } }
+    public Vector3 GetStartPos { get { return PlayerStartPos; } }
+    public MapCreator GetCreator { get { return mapCreator; } }
+    public List<GameObject> GetCoinList { get { return CoinPosition; } set { CoinPosition = value; } }
     public int TotalCoinCount { get { return CoinCount; } set { CoinCount = value; } }
-    public Coroutine GetFall { get { return FallCoroutine; } set { FallCoroutine = value; } }
 
     private GameObject SmokeEffect = null;
     public GameObject smokeEffect { get { return SmokeEffect; } }
@@ -35,57 +36,55 @@ public class GameManager : SingleTon<GameManager>
 
     private GameObject Coin = null;
     public GameObject GetCoin { get { return Coin; } }
+    private GameObject Star = null;
+    public GameObject GetStar { get { return Star; } }
 
 
     public override void Awake()
     {
+        GameManager.Instance.TotalCoinCount = CoinCount;
+        GameManager.Instance.GetCoinList = CoinPosition;
+        Debug.Log("GameManager Awake : " + GetInstanceID());
         base.Awake();
+        //input = GameObject.Find("InputManager").GetComponent<InputManager>();
         mapCreator = GameObject.FindObjectOfType<MapCreator>().GetComponent<MapCreator>();
-        PlayerCharacter = Resources.Load<GameObject>("Player");
-
         cam = GameObject.FindObjectOfType<CameraControl>().GetComponent<CameraControl>();
+        ui = GameObject.FindObjectOfType<UIManager>().GetComponent<UIManager>();
+
+        PlayerCharacter = Resources.Load<GameObject>("Player");
         SmokeEffect = Resources.Load<GameObject>("Smoke");
         RockBlock = Resources.Load<GameObject>("Rock");
         Coin = Resources.Load<GameObject>("Coin");
+        Star = Resources.Load<GameObject>("Star");
     }
     private void Start()
     {
         mapCreator.Create();
         PlayerStartPos = new Vector3(mapCreator.MaxRow / 2, 0f, mapCreator.MaxCol / 2);
         SpawnPlayer();
+        Debug.Log("Player ID Normal : " + player.GetInstanceID());
+
+        Debug.Log("Player ID Instance : " + GameManager.Instance.MyPlayer.GetInstanceID());
         cam.FindPlayer();
-        UIManager.Instance.InitUIManager();
-        UIManager.Instance.UpdateBar();
+        ui.InitUIManager();
+    }
+    private void OnDestroy()
+    {
+        Debug.Log("GameManager Destroyed : " + GetInstanceID());
     }
     private void Update()
     {
-        InputManager.Instance.KeyUpdate();
+        //input.KeyUpdate();
     }
     private void SpawnPlayer()
     {
-        player = Instantiate(PlayerCharacter, PlayerStartPos, Quaternion.identity).GetComponent<Player>();
+        Instantiate(PlayerCharacter, PlayerStartPos, Quaternion.identity);
+        player = GameObject.FindGameObjectWithTag("Player").GetComponent<Player>();
+        Debug.Log("Spawn Time Player Normal ID : " + player.GetInstanceID());
+        GameManager.Instance.MyPlayer = player;
+        Debug.Log("Spawn Time Player Instance ID : " + GameManager.Instance.MyPlayer.GetInstanceID());
     }
-    public IEnumerator Fall(Vector3 myPos)
-    {
-        if (Physics.Raycast(myPos, Vector3.up, out hit, 0.5f))
-        {
-            if (hit.transform.tag == "Ground" || hit.transform.tag == "Rock")
-            {
-                desiredPos = myPos;
-                hitObj = hit.transform.gameObject;
-            }
-        }
-        while (hitObj != null)
-        {
-            desiredPos.y = Mathf.Lerp(hitObj.transform.position.y, hitObj.transform.position.y - 1f, 0.5f);
-            hitObj.transform.position = desiredPos;
-            if (desiredPos.y == hitObj.transform.position.y)
-            {
-                StopCoroutine(FallCoroutine);
-            }
-            yield return null;
-        }
-    }
+
     public void FoundCoin(GameObject coin)
     {
         CoinCount--;
@@ -100,6 +99,16 @@ public class GameManager : SingleTon<GameManager>
             LoadEndScene();
         }
     }
+    public void GetItem()
+    {
+        ui.ChangeAdr(true);
+        GameManager.Instance.isAdr = true;
+    }
+    public void LostItem()
+    {
+        ui.ChangeAdr(false);
+        GameManager.Instance.isAdr = false;
+    }
     public void LoadEndScene()
     {
         SceneManager.LoadScene(2);
@@ -107,5 +116,9 @@ public class GameManager : SingleTon<GameManager>
     public void LoadMainScene()
     {
         SceneManager.LoadScene(0);
+    }
+    public void LoadGameScene()
+    {
+        SceneManager.LoadScene(1);
     }
 }

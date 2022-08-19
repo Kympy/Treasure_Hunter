@@ -4,12 +4,14 @@ using UnityEngine;
 
 public class CubeDestroy : MonoBehaviour
 {
+
     private enum Type
     {
         None,
         Rock,
         Coin,
     }
+
     private int myType;
     private Rigidbody rigid;
     private int maxFloor;
@@ -43,9 +45,13 @@ public class CubeDestroy : MonoBehaviour
             myType = Random.Range(0, 100);
             switch (myType)
             {
-                case < 70: // Normal
+                case < 10: // Star
                     {
-                        Destroy(this.gameObject);
+                        Instantiate(GameManager.Instance.GetStar, transform.position, Quaternion.identity);
+                        break;
+                    }
+                case < 90: // Normal
+                    {
                         break;
                     }
                 case < 100: // Rock
@@ -53,10 +59,10 @@ public class CubeDestroy : MonoBehaviour
                         Vector3 desiredPos = transform.position;
                         desiredPos.y = transform.position.y - 2.1f;
                         Instantiate(GameManager.Instance.GetRock, desiredPos, Quaternion.identity);
-                        Destroy(this.gameObject);
                         break;
                     }
             }
+            Destroy(this.gameObject);
         }
         else
         {

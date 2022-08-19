@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class SingleTon<T> : MonoBehaviour where T : class, new()
 {
-    private static volatile T instance;
+    private static volatile T instance = null;
     private static object lockObj = new object();
 
     public static T Instance
@@ -29,6 +29,7 @@ public class SingleTon<T> : MonoBehaviour where T : class, new()
     }
     public virtual void Awake()
     {
+
         //DontDestroyOnLoad(this.gameObject);
     }
 }

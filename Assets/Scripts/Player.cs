@@ -5,14 +5,14 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     public delegate void HpChanged();
-    public HpChanged hpChanged;
-
+    public HpChanged hpChanged = null;
+    [SerializeField]
     private float HP;
     private float MaxHP = 100f;
-    [SerializeField]
     private float speed = 2f;
-    private float jumpPower = 3500f;
+    private float jumpPower = 8f;
 
+    private float invincibleTimer = 0f;
     private float recoverTimer = 0f;
     private float focusTimer = 0f;
     private int arrowCount = 0;
@@ -20,6 +20,7 @@ public class Player : MonoBehaviour
     private bool isGround = true;
     private bool isJumping = false;
     private bool isDigging = false;
+    private bool Invincible = false;
 
     private RaycastHit hit;
     private RaycastHit groundHit;
@@ -31,6 +32,7 @@ public class Player : MonoBehaviour
     private GameObject FocusAnimation;
     private GameObject Arrow;
     private GameObject temp;
+    private GameObject InvinEffect;
     private Vector3 coinPos;
 
     private Coroutine DigCoroutine;
@@ -39,13 +41,8 @@ public class Player : MonoBehaviour
 
     private void Awake()
     {
+        Debug.Log("Player Awake : " + GetInstanceID());
         InitStat();
-
-        InputManager.Instance.keyInput -= OnMouse;
-        InputManager.Instance.keyInput -= OnKeyBoard;
-
-        InputManager.Instance.keyInput += OnMouse;
-        InputManager.Instance.keyInput += OnKeyBoard;
 
         rigid = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
@@ -53,12 +50,32 @@ public class Player : MonoBehaviour
         FocusAnimation = GameObject.Find("Focus");
         FocusAnimation.SetActive(false);
         Arrow = Resources.Load<GameObject>("Arrow");
+        InvinEffect = GameObject.Find("Invin");
+        InvinEffect.SetActive(false);
+        hpChanged += GameOver;
+    }
+    private void Start()
+    {
+        /*
+        GameManager.Instance.GetInput.keyInput -= OnMouse;
+        GameManager.Instance.GetInput.keyInput -= OnKeyBoard;
+
+        GameManager.Instance.GetInput.keyInput += OnMouse;
+        GameManager.Instance.GetInput.keyInput += OnKeyBoard;
+        */
     }
     private void FixedUpdate()
     {
+        OnMouse();
+        OnKeyBoard();
         CheckGround();
         Movement();
         RecoverHP();
+        ItemTimeCheck();
+    }
+    private void OnDestroy()
+    {
+        Debug.Log("Player Destroyed : " + GetInstanceID());
     }
     private void Movement()
     {
@@ -87,6 +104,7 @@ public class Player : MonoBehaviour
                 {
                     if(hit.transform.tag == "Ground")
                     {
+                        if (Mathf.Abs(hit.transform.position.y - transform.position.y) > 1) return;
                         desiredPos = hit.point;
                         desiredPos.y = transform.position.y;
                         desiredDir = desiredPos - transform.position;
@@ -98,15 +116,14 @@ public class Player : MonoBehaviour
     }
     private void OnKeyBoard()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && isJumping == false && isGround)
+        if (Input.GetKeyDown(KeyCode.Space) && isGround)
         {
-            rigid.AddForce(jumpPower * Vector3.up, ForceMode.Force);
+            rigid.AddForce(jumpPower * Vector3.up, ForceMode.VelocityChange);
             animator.SetBool("IsJump", true);
             isJumping = true;
         }
-        if(Input.GetKey(KeyCode.Q))
+        if(Input.GetKey(KeyCode.Q) && isGround && rigid.velocity.magnitude == 0f)
         {
-            Debug.Log("Focusing!!");
             animator.SetBool("IsFocus", true);
             FindCoinFocus();
             FocusAnimation.SetActive(true);
@@ -124,6 +141,12 @@ public class Player : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.P))
         {
             GameManager.Instance.LoadMainScene();
+        }
+        if(Input.GetKeyDown(KeyCode.R) && GameManager.Instance.isAdr)
+        {
+            GameManager.Instance.LostItem();
+            Invincible = true;
+            InvinEffect.SetActive(true);
         }
     }
     private void FindCoinFocus()
@@ -160,14 +183,14 @@ public class Player : MonoBehaviour
     }
     private void CheckGround()
     {
-        Debug.DrawRay(transform.position, Vector3.down * 0.3f, Color.red);
-        if(Physics.Raycast(transform.position, Vector3.down, out groundHit, 0.3f))
+        Debug.DrawRay(transform.position, Vector3.down * 0.2f, Color.red);
+        if(Physics.Raycast(transform.position, Vector3.down, out groundHit, 0.2f))
         {
             if (groundHit.transform.tag == "Ground" || groundHit.transform.tag == "Rock")
             {
                 animator.SetBool("IsJump", false);
-                isJumping = false;
                 isGround = true;
+                isJumping = false;
             }
         }
         else
@@ -221,10 +244,20 @@ public class Player : MonoBehaviour
     }
     public void SetHP(int value)
     {
-        if(HP <= 100 && HP >= 0)
+        if (Invincible == false)
         {
             HP += value;
-            hpChanged();
+            if (HP > 100) HP = 100;
+
+        }
+        else HP = 100;
+        hpChanged();
+    }
+    private void GameOver()
+    {
+        if(HP <= 0)
+        {
+            GameManager.Instance.LoadEndScene();
         }
     }
     private void RecoverHP()
@@ -236,9 +269,21 @@ public class Player : MonoBehaviour
             {
                 SetHP(10);
                 recoverTimer = 0f;
-                Debug.Log("Recover");
             }
         }
         else recoverTimer = 0f;
+    }
+    private void ItemTimeCheck()
+    {
+        if(Invincible)
+        {
+            invincibleTimer += Time.deltaTime;
+            if(invincibleTimer > 10f)
+            {
+                InvinEffect.SetActive(false);
+                invincibleTimer = 0f;
+                Invincible = false;
+            }
+        }
     }
 }
