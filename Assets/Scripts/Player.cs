@@ -66,6 +66,10 @@ public class Player : MonoBehaviour
     }
     private void FixedUpdate()
     {
+        if(transform.position.y > 3.2f)
+        {
+            transform.position = new Vector3(transform.position.x, 3.2f, transform.position.z);
+        }
         OnMouse();
         OnKeyBoard();
         CheckGround();
