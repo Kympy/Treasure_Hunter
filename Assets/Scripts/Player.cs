@@ -91,20 +91,20 @@ public class Player : MonoBehaviour
         }
         else animator.SetBool("IsWalk", false);
     }
-    private void OnMouse()
+    private void OnMouse() // Mouse Control
     {
-        if(Input.GetMouseButton(1) || Input.GetMouseButtonDown(0))
+        if(Input.GetMouseButton(1) || Input.GetMouseButtonDown(0)) // Left or Right Click
         {
-            mouseRay = Camera.main.ScreenPointToRay(Input.mousePosition);
+            mouseRay = Camera.main.ScreenPointToRay(Input.mousePosition); // Shoot Mouse Ray
             if (Physics.Raycast(mouseRay, out hit))
             {
-                if(Input.GetMouseButton(1))
+                if(Input.GetMouseButton(1)) // Right Click = Move
                 {
-                    desiredPos = hit.point;
+                    desiredPos = hit.point; // Move to Click Position
                     desiredPos.y = transform.position.y;
-                    desiredDir = desiredPos - transform.position;
+                    desiredDir = desiredPos - transform.position; // Rotate to Desired Position
                 }
-                else if(isDigging == false && Input.GetMouseButtonDown(0) && isGround)
+                else if(isDigging == false && Input.GetMouseButtonDown(0) && isGround) // Left Click = Move & Dig
                 {
                     if(hit.transform.tag == "Ground")
                     {
