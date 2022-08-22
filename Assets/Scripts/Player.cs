@@ -106,86 +106,85 @@ public class Player : MonoBehaviour
                 }
                 else if(isDigging == false && Input.GetMouseButtonDown(0) && isGround) // Left Click = Move & Dig
                 {
-                    if(hit.transform.tag == "Ground")
+                    if(hit.transform.tag == "Ground") // Only Sand block can be digged
                     {
-                        if (Mathf.Abs(hit.transform.position.y - transform.position.y) > 1) return;
+                        if (Mathf.Abs(hit.transform.position.y - transform.position.y) > 1) return; // Player not reached target yet
                         desiredPos = hit.point;
                         desiredPos.y = transform.position.y;
-                        desiredDir = desiredPos - transform.position;
-                        DigCoroutine = StartCoroutine(Dig(hit.transform.gameObject));
+                        desiredDir = desiredPos - transform.position; // Move and
+                        DigCoroutine = StartCoroutine(Dig(hit.transform.gameObject)); // Start dig coroutine
                     }
                 }
             }
         }
     }
-    private void OnKeyBoard()
+    private void OnKeyBoard() // Keyboard Control
     {
-        if (Input.GetKeyDown(KeyCode.Space) && isGround)
+        if (Input.GetKeyDown(KeyCode.Space) && isGround) // Space => Jump
         {
             rigid.AddForce(jumpPower * Vector3.up, ForceMode.VelocityChange);
             animator.SetBool("IsJump", true);
             isJumping = true;
         }
-        if(Input.GetKey(KeyCode.Q) && isGround && rigid.velocity.magnitude == 0f)
+        if(Input.GetKey(KeyCode.Q) && isGround && rigid.velocity.magnitude == 0f) // Q down => Special Ability
         {
             animator.SetBool("IsFocus", true);
             FindCoinFocus();
             FocusAnimation.SetActive(true);
         }
-        if(Input.GetKeyUp(KeyCode.Q))
+        if(Input.GetKeyUp(KeyCode.Q)) // Q up => Idle
         {
             animator.SetBool("IsFocus", false);
             FocusAnimation.SetActive(false);
             ReleaseFocus();
         }
-        if (Input.GetKeyDown(KeyCode.F))
+        if (Input.GetKeyDown(KeyCode.F)) // Immortal Damage Cheat Key
         {
             SetHP(-10);
         }
-        if(Input.GetKeyDown(KeyCode.P))
+        if(Input.GetKeyDown(KeyCode.P)) // P => Go to main
         {
             GameManager.Instance.LoadMainScene();
         }
-        if(Input.GetKeyDown(KeyCode.R) && GameManager.Instance.isAdr)
+        if(Input.GetKeyDown(KeyCode.R) && GameManager.Instance.isAdr) // R => Use Item
         {
-            GameManager.Instance.LostItem();
+            GameManager.Instance.LostItem();// Minus item count
             Invincible = true;
             InvinEffect.SetActive(true);
         }
     }
-    private void FindCoinFocus()
+    private void FindCoinFocus() // Q Input Special ability
     {
-        focusTimer += Time.deltaTime;
-        if(focusTimer > 1f)
+        focusTimer += Time.deltaTime; // How long input key
+        if(focusTimer > 1f) // Every 1 second
         {
-            SetHP(-20);
-            arrowCount++;
-            if(arrowCount > GameManager.Instance.TotalCoinCount)
+            SetHP(-20); // Damage HP
+            arrowCount++; // Arrow pointer count increase
+            if(arrowCount > GameManager.Instance.TotalCoinCount) // If arrow count is bigger than total coin count,
             {
-                arrowCount = GameManager.Instance.TotalCoinCount;
+                arrowCount = GameManager.Instance.TotalCoinCount; // Fix arrow count
             }
-            if (GameManager.Instance.TotalCoinCount > 0)
+            if (GameManager.Instance.TotalCoinCount > 0) // More than 0 coin
             {
-                temp = Instantiate(Arrow, transform);
-                coinPos = GameManager.Instance.GetCoinList[arrowCount - 1].transform.position;
-                coinPos.y = transform.position.y;
-                temp.transform.LookAt(coinPos);
+                temp = Instantiate(Arrow, transform); // Create Arrow
+                coinPos = GameManager.Instance.GetCoinList[arrowCount - 1].transform.position; // Get Coin Position
+                coinPos.y = transform.position.y; // Y position fixed
+                temp.transform.LookAt(coinPos); // Rotate Arrow to coin position
                 temp.SetActive(true);
             }
-            focusTimer = 0f;
+            focusTimer = 0f; // timer reset
         }
-
     }
-    private void ReleaseFocus()
+    private void ReleaseFocus() // Q key up
     {
         for(int i = 4; i < arrowCount + 4; i++)
         {
-            Destroy(transform.GetChild(i).gameObject);
+            Destroy(transform.GetChild(i).gameObject); // Destroy All arrow pointers
         }
-        focusTimer = 0f;
+        focusTimer = 0f; // reset
         arrowCount = 0;
     }
-    private void CheckGround()
+    private void CheckGround() // Is player on the ground?
     {
         Debug.DrawRay(transform.position, Vector3.down * 0.2f, Color.red);
         if(Physics.Raycast(transform.position, Vector3.down, out groundHit, 0.2f))
@@ -219,8 +218,7 @@ public class Player : MonoBehaviour
                 {
                     animator.Play("Idle", 0);
                 }
-                StopCoroutine(DigCoroutine);
-                break;
+                yield break;
             }
             if(Mathf.Abs(transform.position.x - desiredPos.x) <= 1  && Mathf.Abs(transform.position.z - desiredPos.z) <= 1)
             {
@@ -235,8 +233,7 @@ public class Player : MonoBehaviour
                     block.GetComponent<CubeDestroy>().OpenAndDestroy();
                     SetHP(-5);
                     isDigging = false;
-                    StopCoroutine(DigCoroutine);
-                    break;
+                    yield break;
                 }
             }
             yield return null;

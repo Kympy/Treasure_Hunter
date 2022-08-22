@@ -2,20 +2,23 @@
 
 Shader "Custom/Outline"
 {
-	Properties{
-			_OutlineColor("Outline Color", Color) = (0,1,0,1)
-			_Outline("Outline width", Range(0, 1)) = 0.1
+	Properties
+	{
+		_OutlineColor("Outline Color", Color) = (0,1,0,1)
+		_Outline("Outline width", Range(0, 1)) = 0.1
 	}
 
-		CGINCLUDE
-		#include "UnityCG.cginc"
+	CGINCLUDE
+	#include "UnityCG.cginc"
 
-		struct appdata {
+	struct appdata
+	{
 		float4 vertex : POSITION;
 		float3 normal : NORMAL;
 	};
 
-	struct v2f {
+	struct v2f
+	{
 		float4 pos : POSITION;
 		float4 color : COLOR;
 	};
@@ -23,7 +26,8 @@ Shader "Custom/Outline"
 	uniform float _Outline;
 	uniform float4 _OutlineColor;
 
-	v2f vert(appdata v) {
+	v2f vert(appdata v)
+	{
 		v2f o;
 
 		v.vertex *= (1 + _Outline);
@@ -35,23 +39,24 @@ Shader "Custom/Outline"
 	}
 	ENDCG
 
-		SubShader{
-			Tags { "DisableBatching" = "True" }
-			Pass {
-				Name "OUTLINE"
-				Tags {"LightMode" = "Always" }
-				Cull Front
-				ZWrite On
-				ColorMask RGB
-				Blend SrcAlpha OneMinusSrcAlpha
+	SubShader
+	{
+		Tags { "DisableBatching" = "True" }
+		Pass
+		{
+			Name "OUTLINE"
+			Tags {"LightMode" = "Always" }
+			Cull Front
+			ZWrite On
+			ColorMask RGB
+			Blend SrcAlpha OneMinusSrcAlpha
 
-				CGPROGRAM
-				#pragma vertex vert
-				#pragma fragment frag
-				half4 frag(v2f i) :COLOR { return i.color; }
-				ENDCG
-			}
+			CGPROGRAM
+			#pragma vertex vert
+			#pragma fragment frag
+			half4 frag(v2f i) :COLOR { return i.color; }
+			ENDCG
+		}
 	}
-
-		Fallback "Diffuse"
+	Fallback "Diffuse"
 }

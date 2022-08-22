@@ -34,7 +34,7 @@ public class CubeDestroy : MonoBehaviour
         {
             myType = (int)Type.Coin;
             GameManager.Instance.TotalCoinCount++;
-            GameManager.Instance.GetCoinList.Add(this.gameObject);
+            GameManager.Instance.GetCoinList.Add(this.gameObject); // Add my coin position to List
         }
     }
     public void OpenAndDestroy() // Set my type And Destroy and Create
